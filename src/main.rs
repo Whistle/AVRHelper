@@ -1,6 +1,11 @@
 use std::env;
 
 const CLOCKRATE: f32 = 1e6;
+const TERM_RST: &'static str = "\x1B[0m";
+const TERM_RED: &'static str = "\x1b[31m";
+const TERM_GRN: &'static str = "\x1b[32m";
+const TERM_YEL: &'static str = "\x1b[33m";
+
 
 fn calc_baudrate(baudrate: f32, clockrate: f32, u2x: bool) {
 	let mut ubrr: f32;
@@ -12,6 +17,8 @@ fn calc_baudrate(baudrate: f32, clockrate: f32, u2x: bool) {
 	let error: f32;
 	let error_a: f32;
 	let error_b: f32;
+
+	let mut color = TERM_YEL;
 
 	match u2x {
 		true => divisor =  8.0,
@@ -35,7 +42,16 @@ fn calc_baudrate(baudrate: f32, clockrate: f32, u2x: bool) {
 	if ubrr < 1.0 {
 		return;
 	}
-	println!("Baudrate: {:6}, U2X: {}, UBRR: 0x{:04x}, error: {:+.1}%", baudrate, u2x, ubrr as u16, error);
+
+	if error.abs() > 2.0 {
+		color = TERM_RED;
+	}
+
+	if error.abs() < 0.2 {
+		color = TERM_GRN;
+	}
+
+	println!("{} Baudrate: {:6}, U2X: {}, UBRR: 0x{:04x}, error: {:+.1}%{}", color, baudrate, u2x, ubrr as u16, error, TERM_RST);
 }
 
 fn main() {
@@ -64,7 +80,8 @@ fn main() {
 		let num = args[1].parse::<f32>();
 		match num {
 			Ok(val) => clockrate = val,
-			_       => println!("No valid clockrate given. Falling back to {}Hz", CLOCKRATE),
+			_       => println!("{}No valid clockrate given. Falling back to {}Hz{}", TERM_RED
+,  CLOCKRATE, TERM_RST),
 		}
 	}
 
